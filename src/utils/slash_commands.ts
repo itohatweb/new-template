@@ -8,6 +8,15 @@ import {
   sendInteractionResponse,
   InteractionResponseTypes,
   SlashCommandInteraction,
+  bgYellow,
+  bgBlack,
+  bgGreen,
+  bgMagenta,
+  black,
+  cache,
+  green,
+  red,
+  white,
 } from "../../deps.ts";
 import { Command } from "../types/commands.ts";
 import {
@@ -17,9 +26,42 @@ import {
 } from "../types/interactions.ts";
 import { log } from "./logger.ts";
 import { translate } from "../locales/translate.ts";
-import { createCommandInfo } from "./command_info.ts";
-import { commandAllowed } from "../monitors/command_handler.ts";
-import { logCommand } from "./commands.ts";
+import { CommandInfo, createCommandInfo } from "./command_info.ts";
+
+/** Runs the inhibitors to see if a command is allowed to run. */
+export async function commandAllowed(
+  data: CommandInfo,
+  // deno-lint-ignore no-explicit-any
+  command: Command<any>
+) {
+  const inhibitorResults = await Promise.all([...bot.inhibitors.values()].map((inhibitor) => inhibitor(data, command)));
+
+  if (inhibitorResults.includes(true)) {
+    logCommand(data, "Inhibit", command.name);
+    return false;
+  }
+
+  return true;
+}
+
+export function logCommand(
+  info: CommandInfo,
+  type: "Failure" | "Success" | "Trigger" | "Slowmode" | "Missing" | "Inhibit",
+  commandName: string
+) {
+  const command = `[COMMAND: ${bgYellow(black(commandName || "Unknown"))} - ${bgBlack(
+    ["Failure", "Slowmode", "Missing"].includes(type) ? red(type) : type === "Success" ? green(type) : white(type)
+  )}]`;
+
+  const user = bgGreen(
+    black(`${info.user.username}#${info.user.discriminator.toString().padStart(4, "0")}(${info.id})`)
+  );
+  const guild = bgMagenta(
+    black(`${cache.guilds.get(info.guildId)?.name || "DM"}${info.guildId ? `(${info.guildId})` : ""}`)
+  );
+
+  log.info(`${command} by ${user} in ${guild} with MessageID: ${info.id}`);
+}
 
 /** Parse the options to a nice object.
  * NOTE: this does not work with subcommands

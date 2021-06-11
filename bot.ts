@@ -8,43 +8,7 @@ export const bot = {
   eventHandlers: {} as EventHandlers,
   monitors: new Collection<string, Monitor>(),
 
-  commands: new Collection<string, Command>([
-    [
-      "test",
-      {
-        name: "test",
-        subcommands: new Map<string, Command>([
-          [
-            "subcommandgroup",
-            {
-              name: "subcommandgroup",
-              subcommands: new Map<string, Command>([
-                [
-                  "hoho",
-                  {
-                    name: "hoho",
-                    execute: (args) => {
-                      // sendInteractionResponse(snowflakeToBigint(args.id), data.token, {
-                      //   type: DiscordInteractionResponseTypes.ChannelMessageWithSource,
-                      //   data: {
-                      //     content: "good",
-                      //   },
-                      // });
-
-                      console.log("MASD", args);
-                    },
-                  },
-                ],
-              ]),
-            },
-          ],
-        ]),
-        execute: async (data) => {
-          await data.reply("FOO");
-        },
-      },
-    ],
-  ]),
+  commands: new Collection<string, Command>(),
   options: new Collection<ApplicationCommandOptionTypes, Argument>(),
   inhibitors: new Collection<
     string,
@@ -69,3 +33,43 @@ export const bot = {
 };
 
 export default bot;
+
+// TODO: remove this
+const comms = [
+  [
+    "test",
+    {
+      name: "test",
+      subcommands: new Map<string, Command>([
+        [
+          "subcommandgroup",
+          {
+            name: "subcommandgroup",
+            subcommands: new Map<string, Command>([
+              [
+                "hoho",
+                {
+                  name: "hoho",
+                  execute: (args) => {
+                    // sendInteractionResponse(snowflakeToBigint(args.id), data.token, {
+                    //   type: DiscordInteractionResponseTypes.ChannelMessageWithSource,
+                    //   data: {
+                    //     content: "good",
+                    //   },
+                    // });
+
+                    console.log("MASD", args);
+                  },
+                },
+              ],
+            ]),
+          },
+        ],
+      ]),
+      // @ts-ignore -
+      execute: async (data) => {
+        await data.reply("FOO");
+      },
+    },
+  ],
+];
