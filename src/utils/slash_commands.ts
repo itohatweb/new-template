@@ -18,7 +18,7 @@ import {
   red,
   white,
 } from "../../deps.ts";
-import { Command } from "../types/commands.ts";
+import { Command, ConvertArgumentDefinitionsToArgs } from "../types/commands.ts";
 import {
   BetterApplicationCommandInteractionDataResolved,
   BetterSlashCommandInteraction,
@@ -155,8 +155,8 @@ export function convertToBigint<T extends {}>(
       continue;
     }
 
-    if (key === "roles") {
-      props[key] = (value as string[])?.map((id) => snowflakeToBigint(id)) ?? [];
+    if (key === "roles" && Array.isArray(props[key])) {
+      props[key] = ((value as string[]) ?? []).map((id) => snowflakeToBigint(id));
       continue;
     }
 
@@ -178,7 +178,8 @@ export function convertToBigint<T extends {}>(
   return props as T;
 }
 
-function getCommand(interaction: SlashCommandInteraction): Command | undefined {
+// deno-lint-ignore no-explicit-any
+function getCommand(interaction: SlashCommandInteraction): Command<any> | undefined {
   const name = interaction.data?.name;
   if (!name) return;
 
@@ -256,7 +257,8 @@ export async function executeCommand(interaction: SlashCommandInteraction) {
         },
       }).catch(log.error);
 
-    await command.execute(info, parsedArguments);
+    // deno-lint-ignore no-explicit-any
+    await command.execute(info, parsedArguments as ConvertArgumentDefinitionsToArgs<any>);
     logCommand(info, "Success", command.name);
   } catch (error) {
     console.error(error);

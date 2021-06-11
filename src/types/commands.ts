@@ -87,11 +87,11 @@ type RoleOptionalArgumentDefinition<N extends string = string> = BaseDefinition 
 // MENTIONABLE
 type MentionableArgumentDefinition<N extends string = string> = BaseDefinition & {
   name: N;
-  type: DiscordApplicationCommandOptionTypes.Role;
+  type: DiscordApplicationCommandOptionTypes.Mentionable;
 };
 type MentionableOptionalArgumentDefinition<N extends string = string> = BaseDefinition & {
   name: N;
-  type: DiscordApplicationCommandOptionTypes.Role;
+  type: DiscordApplicationCommandOptionTypes.Mentionable;
   required: false;
 };
 
