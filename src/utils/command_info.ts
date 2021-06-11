@@ -12,7 +12,6 @@ import {
   hasOwnProperty,
   InteractionApplicationCommandCallbackData,
   InteractionResponseTypes,
-  sendDirectMessage,
   sendInteractionResponse,
   sendMessage,
   startTyping,
@@ -35,7 +34,8 @@ const baseCommandInfo: Partial<CommandInfo> = {
         return await editMessage(this.channelId!, this.originalResponseId!, { ...data, flags: undefined });
       }
 
-      if (data.private) return await sendDirectMessage(this.user!.id, data);
+      // TODO: not so satisfied with that one
+      // if (data.private) return await sendDirectMessage(this.user!.id, data);
 
       return await sendMessage(this.channelId!, data);
     }
@@ -94,7 +94,7 @@ export function createCommandInfo(data: DiscordenoMessage | BetterSlashCommandIn
     props[key] = createNewProp(data[key]);
   });
 
-  // TODO: cover dms dummy
+  // TODO: cover dms somehow
   if (!hasOwnProperty(data, "token")) {
     const member = cache.members.get(data.authorId);
     const guildMember = member?.guilds.get(data.guildId);
@@ -169,7 +169,7 @@ export interface CommandInfo {
     content:
       | string
       | (InteractionApplicationCommandCallbackData & {
-          /** Set to true if the response should be private */
+          /** Set to true if the response should be private, only works with slash commands */
           private?: boolean;
         })
   ) => Promise<DiscordenoMessage | undefined>;

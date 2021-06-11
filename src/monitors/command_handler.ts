@@ -18,6 +18,7 @@ import {
 import { log } from "../utils/logger.ts";
 import { Command } from "../types/commands.ts";
 import { CommandInfo, createCommandInfo } from "../utils/command_info.ts";
+import { logCommand } from "../utils/commands.ts";
 
 export function parsePrefix(guildId: bigint | undefined) {
   const prefix = guildId ? bot.serverPrefixes.get(guildId) : configs.prefix;
@@ -32,25 +33,9 @@ export function parseCommand(commandName: string) {
   return bot.commands.find((cmd) => Boolean(cmd.aliases?.includes(commandName)));
 }
 
-export function logCommand(
-  message: DiscordenoMessage | Interaction,
-  guildName: string,
-  type: "Failure" | "Success" | "Trigger" | "Slowmode" | "Missing" | "Inhibit",
-  commandName: string
-) {
-  const command = `[COMMAND: ${bgYellow(black(commandName || "Unknown"))} - ${bgBlack(
-    ["Failure", "Slowmode", "Missing"].includes(type) ? red(type) : type === "Success" ? green(type) : white(type)
-  )}]`;
-
-  // TODO: pretty log - NAME - ID
-  const user = bgGreen(black(`${message.id}(${message.id})`));
-  const guild = bgMagenta(black(`${guildName}${message.guildId ? `(${message.guildId})` : ""}`));
-
-  log.info(`${command} by ${user} in ${guild} with MessageID: ${message.id}`);
-} /** Parses all the arguments for the command based on the message sent by the user. */
-
+/** Parses all the arguments for the command based on the message sent by the user. */
 async function parseArguments(
-  data: DiscordenoMessage,
+  data: CommandInfo,
   // deno-lint-ignore no-explicit-any
   command: Command<any>,
   parameters: string[]
@@ -98,7 +83,7 @@ async function parseArguments(
 }
 
 /** Runs the inhibitors to see if a command is allowed to run. */
-async function commandAllowed(
+export async function commandAllowed(
   data: CommandInfo,
   // deno-lint-ignore no-explicit-any
   command: Command<any>
@@ -106,7 +91,7 @@ async function commandAllowed(
   const inhibitorResults = await Promise.all([...bot.inhibitors.values()].map((inhibitor) => inhibitor(data, command)));
 
   if (inhibitorResults.includes(true)) {
-    logCommand(data, data.guild?.name || "DM", "Inhibit", command.name);
+    logCommand(data, "Inhibit", command.name);
     return false;
   }
 
@@ -114,7 +99,7 @@ async function commandAllowed(
 }
 
 export async function executeCommand(
-  data: DiscordenoMessage,
+  data: CommandInfo,
   // deno-lint-ignore no-explicit-any
   command: Command<any>,
   parameters: string[]
@@ -127,7 +112,7 @@ export async function executeCommand(
     const args = await parseArguments(data, command, parameters);
     // Some arg that was required was missing and handled already
     if (!args) {
-      return logCommand(data, data.guild?.name || "DM", "Missing", command.name);
+      return logCommand(data, "Missing", command.name);
     }
 
     // If no subcommand execute the command
@@ -146,12 +131,9 @@ export async function executeCommand(
       // Check subcommand permissions and options
       if (!(await commandAllowed(data, command))) return;
 
-      const info = createCommandInfo(data);
-      if (!info) return;
-
       // @ts-ignore -
-      await command.execute?.(info, args);
-      return logCommand(data, data.guild?.name || "DM", "Success", command.name);
+      await command.execute?.(data, args);
+      return logCommand(data, "Success", command.name);
     }
 
     // A subcommand was asked for in this command
@@ -163,7 +145,7 @@ export async function executeCommand(
     }
   } catch (error) {
     log.error(error);
-    logCommand(data, data.guild?.name || "DM", "Failure", command.name);
+    logCommand(data, "Failure", command.name);
     handleError(data, error);
   }
 }
@@ -192,8 +174,10 @@ async function messageMonitor(message: DiscordenoMessage) {
   const command = parseCommand(commandName);
   if (!command) return;
 
-  const guild = cache.guilds.get(message.guildId);
-  logCommand(message, guild?.name || "DM", "Trigger", commandName);
+  const info = createCommandInfo(message);
+  if (!info) return;
+
+  logCommand(info, "Trigger", commandName);
 
   // const lastUsed = bot.slowmode.get(message.author.id);
   // Check if this user is spamming by checking slowmode
@@ -208,7 +192,7 @@ async function messageMonitor(message: DiscordenoMessage) {
   //   return logCommand(message, guild?.name || "DM", "Slowmode", commandName);
   // }
 
-  executeCommand(message, command, parameters);
+  executeCommand(info, command, parameters);
 }
 
 // The monitor itself for this file. Above is helper functions for this monitor.
@@ -222,6 +206,6 @@ bot.monitors.set("commandHandler", {
 });
 
 // TODO: new-template implement handle error
-function handleError(data: DiscordenoMessage, error: any) {
+function handleError(data: CommandInfo, error: any) {
   throw new Error("Function not implemented.");
 }

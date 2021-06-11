@@ -1,8 +1,6 @@
 import bot from "../../bot.ts";
 import {
-  ApplicationCommandInteractionDataResolved,
   ApplicationCommandOptionTypes,
-  Interaction,
   snowflakeToBigint,
   ApplicationCommandInteractionDataOptionWithValue,
   iconHashToBigInt,
@@ -20,6 +18,8 @@ import {
 import { log } from "./logger.ts";
 import { translate } from "../locales/translate.ts";
 import { createCommandInfo } from "./command_info.ts";
+import { commandAllowed } from "../monitors/command_handler.ts";
+import { logCommand } from "./commands.ts";
 
 /** Parse the options to a nice object.
  * NOTE: this does not work with subcommands
@@ -161,18 +161,30 @@ function getCommand(interaction: SlashCommandInteraction): Command | undefined {
 }
 
 export async function executeCommand(interaction: SlashCommandInteraction) {
-  try {
-    const command = getCommand(interaction);
-    if (!command?.execute)
-      return await sendInteractionResponse(snowflakeToBigint(interaction.id), interaction.token, {
-        type: InteractionResponseTypes.ChannelMessageWithSource,
-        private: true,
-        data: {
-          content: "Something went wrong. The command could not be found.",
-        },
-      }).catch(log.error);
+  const command = getCommand(interaction);
+  if (!command?.execute)
+    return await sendInteractionResponse(snowflakeToBigint(interaction.id), interaction.token, {
+      type: InteractionResponseTypes.ChannelMessageWithSource,
+      private: true,
+      data: {
+        content: "Something went wrong. The command could not be found.",
+      },
+    }).catch(log.error);
 
-    const converted = convertToBigint<BetterSlashCommandInteraction>(interaction);
+  const converted = convertToBigint<BetterSlashCommandInteraction>(interaction);
+
+  const info = createCommandInfo(converted);
+  if (!info)
+    return await sendInteractionResponse(snowflakeToBigint(interaction.id), interaction.token, {
+      type: InteractionResponseTypes.ChannelMessageWithSource,
+      private: true,
+      data: {
+        content: "Something went wrong. The command data could not be created.",
+      },
+    }).catch(log.error);
+
+  try {
+    logCommand(info, "Trigger", command.name);
 
     const options =
       converted.data?.options?.[0].type === ApplicationCommandOptionTypes.SubCommandGroup
@@ -180,6 +192,9 @@ export async function executeCommand(interaction: SlashCommandInteraction) {
         : converted.data?.options?.[0].type === ApplicationCommandOptionTypes.SubCommand
         ? converted.data?.options[0].options
         : converted.data?.options;
+
+    // Check subcommand permissions and options
+    if (!(await commandAllowed(info, command))) return;
 
     const translatedOptionNames =
       interaction.guildId && command.options ? translateOptionNames(interaction.guildId, command.options) : {};
@@ -199,20 +214,12 @@ export async function executeCommand(interaction: SlashCommandInteraction) {
         },
       }).catch(log.error);
 
-    const info = createCommandInfo(converted);
-
-    if (!info)
-      return await sendInteractionResponse(snowflakeToBigint(interaction.id), interaction.token, {
-        type: InteractionResponseTypes.ChannelMessageWithSource,
-        private: true,
-        data: {
-          content: "Something went wrong. The command data could not be created.",
-        },
-      }).catch(log.error);
-
     await command.execute(info, parsedArguments);
+    logCommand(info, "Success", command.name);
   } catch (error) {
     console.error(error);
+
+    logCommand(info, "Failure", command.name);
 
     return await sendInteractionResponse(snowflakeToBigint(interaction.id), interaction.token, {
       type: InteractionResponseTypes.ChannelMessageWithSource,

@@ -1,4 +1,4 @@
-import { ApplicationCommandOption, DiscordenoMessage, Interaction, Permission } from "../../deps.ts";
+import { ApplicationCommandOption, Permission } from "../../deps.ts";
 import { InteractionCommandArgs } from "./interactions.ts";
 import { CommandInfo } from "../utils/command_info.ts";
 
@@ -11,7 +11,7 @@ export interface Command<T = any> {
   /** The options for the command, used for both slash and message commands. */
   options?: (ApplicationCommandOption & {
     /** The function to execute when the argument is missing. Only useful for message commands. */
-    missing?: (message: DiscordenoMessage) => unknown;
+    missing?: (info: CommandInfo) => unknown;
   })[];
   execute?: (data: CommandInfo, args: InteractionCommandArgs) => unknown;
   subcommands?: Map<string, Command>;
@@ -28,9 +28,7 @@ export interface Command<T = any> {
   /** Dm only by default false */
   dmOnly?: boolean;
 
-  permissionLevels?:
-    | PermissionLevels[]
-    | ((data: DiscordenoMessage | Interaction, command: Command<T>) => boolean | Promise<boolean>);
+  permissionLevels?: PermissionLevels[] | ((data: CommandInfo, command: Command<T>) => boolean | Promise<boolean>);
   botServerPermissions?: Permission[];
   botChannelPermissions?: Permission[];
   userServerPermissions?: Permission[];

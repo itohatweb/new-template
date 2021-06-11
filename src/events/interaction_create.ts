@@ -1,9 +1,4 @@
-import {
-  DiscordInteractionResponseTypes,
-  DiscordInteractionTypes,
-  sendInteractionResponse,
-  snowflakeToBigint,
-} from "../../deps.ts";
+import { DiscordInteractionTypes } from "../../deps.ts";
 import { bot } from "../../bot.ts";
 import { executeCommand } from "../utils/slash_commands.ts";
 

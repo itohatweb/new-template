@@ -1,7 +1,4 @@
 import bot from "../../bot.ts";
-import { InteractionResponseTypes, sendInteractionResponse, snowflakeToBigint } from "../../deps.ts";
-import { isInteraction } from "../types/type_guards/is_interaction.ts";
-import { log } from "../utils/logger.ts";
 import { humanizeMilliseconds } from "../utils/time.ts";
 
 const membersInCooldown = new Map<string, Cooldown>();
@@ -20,26 +17,11 @@ bot.inhibitors.set("cooldown", async function (data, command) {
     if (cooldown.used >= (command.cooldown.allowedUses || 1)) {
       const now = Date.now();
       if (cooldown.timestamp > now) {
-        if (isInteraction(data)) {
-          await sendInteractionResponse(snowflakeToBigint(data.id), data.token, {
-            type: InteractionResponseTypes.DeferredChannelMessageWithSource,
-            data: {
-              content: `Hey, you are on cooldown please wait another **${humanizeMilliseconds(
-                cooldown.timestamp - now
-              )}** until you can use the command again`,
-            },
-          }).catch(log.error);
-
-          return true;
-        }
-
-        await data
-          .reply(
-            `Hey, you are on cooldown please wait another **${humanizeMilliseconds(
-              cooldown.timestamp - now
-            )}** until you can use the command again`
-          )
-          .catch(console.error);
+        await data.reply(
+          `Hey, you are on cooldown please wait another **${humanizeMilliseconds(
+            cooldown.timestamp - now
+          )}** until you can use the command again`
+        );
 
         return true;
       }
