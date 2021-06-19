@@ -1,17 +1,11 @@
 import {
   botId,
   cache,
-  DiscordenoMessage,
   getMissingChannelPermissions,
   getMissingGuildPermissions,
-  Interaction,
-  InteractionResponseTypes,
   PermissionStrings,
-  sendInteractionResponse,
-  snowflakeToBigint,
 } from "../../deps.ts";
 import bot from "../../bot.ts";
-import { isInteraction } from "../types/type_guards/is_interaction.ts";
 import { log } from "../utils/logger.ts";
 import { CommandInfo } from "../utils/command_info.ts";
 

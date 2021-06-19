@@ -3,6 +3,7 @@ import { createCommand } from "../utils/commands.ts";
 
 createCommand({
   name: "test",
+  description: "SAD",
   options: [
     {
       type: DiscordApplicationCommandOptionTypes.Mentionable,
@@ -15,4 +16,15 @@ createCommand({
     console.log(args.mention);
     return await data.reply("FOO");
   },
+
+  subcommands: [
+    {
+      name: "test",
+      group: "someGroup",
+      options: [],
+      execute() {
+        
+      }
+    }
+  ]
 });

@@ -72,31 +72,38 @@ function optionParser(
   translateOptions?: Record<string, string>
 ): InteractionCommandArgs | false {
   const parsed: InteractionCommandArgs = {};
+  // Options can be undefined so we just return an empty object
   if (!options) return parsed;
 
   for (const option of options) {
     if (option.type === ApplicationCommandOptionTypes.Channel) {
       const channel = resolved?.channels?.[option.value];
+      // If the channel is somehow undefined return false
       if (!channel) return false;
 
+      // Save the argument with the correct name
       parsed[translateOptions?.[option.name] ?? option.name] = channel;
       continue;
     }
 
     if (option.type === ApplicationCommandOptionTypes.Role) {
       const role = resolved?.roles?.[option.value];
+      // If the role is somehow undefined return false
       if (!role) return false;
 
+      // Save the argument with the correct name
       parsed[translateOptions?.[option.name] ?? option.name] = role;
       continue;
     }
 
     if (option.type === ApplicationCommandOptionTypes.User) {
       const user = resolved?.users?.[option.value];
+      // If the user is somehow undefined return false
       if (!user) return false;
 
       const member = resolved?.members?.[option.value];
 
+      // Save the argument with the correct name
       parsed[translateOptions?.[option.name] ?? option.name] = {
         member: member || undefined,
         user,
@@ -107,23 +114,26 @@ function optionParser(
     if (option.type === ApplicationCommandOptionTypes.Mentionable) {
       const role = resolved?.roles?.[option.value];
       const user = resolved?.users?.[option.value];
-      const member = resolved?.members?.[option.value];
 
+      // If user and role are somehow undefined return false
       if (!user && !role) return false;
 
-      const final = user ? { user, member: member || undefined } : role;
-      if (!final) return false;
+      const member = resolved?.members?.[option.value];
+      const final = user ? { user, member: member || undefined } : role!;
 
+      // Save the argument with the correct name
       parsed[translateOptions?.[option.name] ?? option.name] = final;
       continue;
     }
 
+    // Save the argument with the correct name
     parsed[translateOptions?.[option.name] ?? option.name] = option.value;
   }
 
   return parsed;
 }
 
+/** Translates all options of the command to an object: translatedOptionName: optionName */
 function translateOptionNames(guildId: bigint | string, options: ApplicationCommandOption[]) {
   const translated: Record<string, string> = {};
 
@@ -189,15 +199,15 @@ function getCommand(interaction: SlashCommandInteraction): Command<any> | undefi
   // TODO: maybe make these translatable too?
   // check if it is a subcommand group
   if (interaction.data?.options?.[0].type === ApplicationCommandOptionTypes.SubCommandGroup) {
-    command = command.subcommands?.get(interaction.data?.options?.[0].name);
+    command = command._subcommands?.get(interaction.data?.options?.[0].name);
     if (!command) return;
     // If it is a group we need to get the real command
-    return command.subcommands?.get(interaction.data.options[0].options?.[0].name || "");
+    return command._subcommands?.get(interaction.data.options[0].options?.[0].name || "");
   }
 
   // check if it is a normal subcommand
   if (interaction.data?.options?.[0].type === ApplicationCommandOptionTypes.SubCommand) {
-    return command.subcommands?.get(interaction.data?.options?.[0].name);
+    return command._subcommands?.get(interaction.data?.options?.[0].name);
   }
 
   return command;

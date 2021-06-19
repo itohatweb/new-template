@@ -1,11 +1,5 @@
 import { ApplicationCommandOption, DiscordApplicationCommandOptionTypes, Permission } from "../../deps.ts";
-import {
-  BetterChannel,
-  BetterRole,
-  BetterUser,
-  InteractionCommandArgs,
-  InteractionMemberValue,
-} from "./interactions.ts";
+import { BetterChannel, BetterRole, InteractionMemberValue } from "./interactions.ts";
 import { CommandInfo } from "../utils/command_info.ts";
 
 // deno-lint-ignore no-explicit-any
@@ -158,14 +152,18 @@ export type ConvertArgumentDefinitionsToArgs<T extends readonly ArgumentDefiniti
 export interface Command<T extends readonly ArgumentDefinition[]> {
   /** The name of the command, used for both slash and message commands. */
   name: string;
-  /** The aliases for the command, only used for message commands. */
-  aliases?: string[];
+  /** The description of the command*/
+  description: string;
   // TODO: consider type being a string like "number" | "user" for better ux
   /** The options for the command, used for both slash and message commands. */
   // options?: ApplicationCommandOption[];
   options?: T;
   execute?: (data: CommandInfo, args: ConvertArgumentDefinitionsToArgs<T>) => unknown;
-  subcommands?: Map<string, Command<any>>;
+  // deno-lint-ignore no-explicit-any
+  subcommands?: (Omit<Command<any>, "subcommands"> & { group?: string })[];
+  /** @private used to store the commands after start for faster access */
+  // deno-lint-ignore no-explicit-any
+  _subcommands?: Map<string, Command<any>>;
   /** Whether the command should have a cooldown */
   cooldown?: {
     /** How long the user needs to wait after the first execution until he can use the command again */

@@ -1,5 +1,5 @@
 import bot from "../../bot.ts";
-import { Collection } from "../../deps.ts";
+import { Collection, CreateGlobalApplicationCommand, DiscordApplicationCommandOptionTypes } from "../../deps.ts";
 import { ArgumentDefinition, Command } from "../types/commands.ts";
 import { Milliseconds } from "../types/time.ts";
 import { log } from "./logger.ts";
@@ -18,6 +18,7 @@ export function createCommand<T extends readonly ArgumentDefinition[]>(command: 
   bot.commands.set(command.name, command);
 }
 
+// TODO: remove this
 export function createSubcommand<T extends readonly ArgumentDefinition[]>(
   commandName: string,
   subcommand: Command<T>,
@@ -54,13 +55,44 @@ export function createSubcommand<T extends readonly ArgumentDefinition[]>(
     return;
   }
 
-  if (!command.subcommands) {
-    command.subcommands = new Collection();
+  if (!command._subcommands) {
+    command._subcommands = new Collection();
   }
 
-  if ((command.options?.length ?? 0 + command.subcommands.size) >= 25)
+  if ((command.options?.length ?? 0 + command._subcommands.size) >= 25)
     return log.warn("Max options length for options exeeded", commandName, subcommand.name);
 
   log.debug("Creating subcommand", command.name, subcommand.name);
-  command.subcommands.set(subcommand.name, subcommand);
+  command._subcommands.set(subcommand.name, subcommand);
 }
+
+export function buildCommands() {
+  const commands: CreateGlobalApplicationCommand[] = [];
+
+  // @ts-ignore object will be filled up later
+  let tmp: CreateGlobalApplicationCommand = {};
+
+  for (const command of bot.commands.values()) {
+    // @ts-ignore object will be filled up later
+    tmp = {};
+    tmp.name = command.name;
+    tmp.description = command.description;
+    tmp.options = command.subcommands ? [] : command.options;
+
+    if (command.subcommands) {
+      for (const subcommand of command.subcommands.values()) {
+        tmp.options!.push({ ...subcommand, type: DiscordApplicationCommandOptionTypes.SubCommand });
+      }
+    }
+
+    commands.push(tmp);
+  }
+
+  console.log(commands);
+}
+
+// users.sort(function(a, b){
+//   if(a.firstname < b.firstname) { return -1; }
+//   if(a.firstname > b.firstname) { return 1; }
+//   return 0;
+// })

@@ -3,5 +3,4 @@ import { log } from "../utils/logger.ts";
 
 bot.eventHandlers.ready = function () {
   log.info("The bot is online");
-  console.log(bot.commands);
 };

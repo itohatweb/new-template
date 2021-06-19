@@ -1,6 +1,7 @@
 import bot from "./bot.ts";
 import configs from "./configs.ts";
-import { startBot } from "./deps.ts";
+import { createSlashCommand, startBot, upsertSlashCommand } from "./deps.ts";
+import { buildCommands } from "./src/utils/commands.ts";
 import { fileLoader, importDirectory } from "./src/utils/file_loader.ts";
 import { log } from "./src/utils/logger.ts";
 
@@ -19,6 +20,8 @@ await Promise.all(
   ].map((path) => importDirectory(Deno.realPathSync(path)))
 );
 await fileLoader();
+
+buildCommands();
 
 startBot({
   token: configs.token,

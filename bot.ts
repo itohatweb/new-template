@@ -1,4 +1,4 @@
-import { ApplicationCommandOptionTypes, Collection, DiscordenoMessage, EventHandlers, Interaction } from "./deps.ts";
+import { ApplicationCommandOptionTypes, Collection, EventHandlers } from "./deps.ts";
 import { Argument } from "./src/types/argument.ts";
 import { PermissionLevels, Command } from "./src/types/commands.ts";
 import { Monitor } from "./src/types/monitors.ts";
